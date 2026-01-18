@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Neverending Story</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#111111" />
+  <style>
+    body { font-family: -apple-system, system-ui, sans-serif; margin: 0; background:#0f1115; color:#e8e8e8; }
+    header { padding: 14px 16px; background:#111; position: sticky; top: 0; border-bottom: 1px solid #222; }
+    header h1 { font-size: 16px; margin: 0; }
+    main { padding: 16px; max-width: 900px; margin: 0 auto; }
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    button { background:#2a2f3a; color:#fff; border:1px solid #3b4252; border-radius:10px; padding:10px 12px; cursor:pointer; }
+    button.primary { background:#3b82f6; border-color:#3b82f6; }
+    button.danger { background:#7f1d1d; border-color:#7f1d1d; }
+    input, textarea, select { background:#141925; color:#fff; border:1px solid #2b3242; border-radius:10px; padding:10px; width:100%; box-sizing:border-box; }
+    textarea { min-height: 120px; }
+    .card { background:#121621; border:1px solid #222a3a; border-radius:12px; padding:14px; margin: 12px 0; }
+    .story { white-space: pre-wrap; line-height: 1.45; font-size: 16px; }
+    .muted { color:#a7b0c0; font-size: 13px; }
+    .choices { display:flex; flex-direction: column; gap:10px; margin-top: 12px; }
+    .choiceBtn { text-align:left; }
+    .split { display:grid; grid-template-columns: 1fr; gap:12px; }
+    @media (min-width: 900px) { .split { grid-template-columns: 1fr 1fr; } }
+    .pill { font-size:12px; padding:4px 8px; border:1px solid #2b3242; border-radius:999px; color:#cbd5e1; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="row">
+      <h1>Neverending Story</h1>
+      <span class="pill" id="campaignPill">No campaign</span>
+    </div>
+  </header>
+
+  <main>
+    <div class="card" id="setupCard">
+      <h2 style="margin:0 0 10px 0; font-size:16px;">New Campaign (Freeform Solo)</h2>
+
+      <label class="muted">Worker URL</label>
+      <input id="workerUrl" placeholder="https://YOUR-WORKER.workers.dev/" />
+
+      <div class="split" style="margin-top:12px;">
+        <div>
+          <label class="muted">Campaign Name</label>
+          <input id="campaignName" placeholder="e.g., Pallimustus Phoenix Run" />
+        </div>
+        <div>
+          <label class="muted">Rating</label>
+          <select id="rating">
+            <option value="PG">PG (light)</option>
+            <option value="PG-13" selected>PG-13 (balanced)</option>
+            <option value="R">R (gritty)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="split" style="margin-top:12px;">
+        <div>
+          <label class="muted">Pacing (longer = fewer choices)</label>
+          <select id="pacing">
+            <option value="short">Short</option>
+            <option value="medium" selected>Medium</option>
+            <option value="long">Long</option>
+          </select>
+        </div>
+        <div>
+          <label class="muted">Narration</label>
+          <select id="ttsMode">
+            <option value="on">On-device TTS (free)</option>
+            <option value="off">Off (text only)</option>
+          </select>
+        </div>
+      </div>
+
+      <label class="muted" style="display:block; margin-top:12px;">Seed (type or paste)</label>
+      <textarea id="seed" placeholder="Describe the basics: genre, premise, your character, what you want and don’t want..."></textarea>
+
+      <div class="row" style="margin-top:12px;">
+        <button class="primary" id="startBtn">Start Story</button>
+        <button id="loadBtn">Load Existing</button>
+        <button class="danger" id="wipeBtn">Wipe All Local Data</button>
+      </div>
+
+      <p class="muted" style="margin-top:10px;">
+        Tip: On iOS/Android you can “Add to Home Screen” to make it feel like an app.
+      </p>
+    </div>
+
+    <div class="card" id="playCard" style="display:none;">
+      <div class="row" style="justify-content:space-between;">
+        <div class="row">
+          <button id="backToLibraryBtn">Library</button>
+          <button id="replayBtn">Replay</button>
+          <button id="undoBtn">Undo</button>
+        </div>
+        <div class="row">
+          <button id="continueBtn" class="primary">Continue</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px;">
+        <div class="muted" id="statusLine">Ready.</div>
+        <div class="story" id="storyText" style="margin-top:10px;"></div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0 0 10px 0; font-size:14px;">Choices</h3>
+        <div class="choices" id="choices"></div>
+
+        <div style="margin-top:12px;">
+          <label class="muted">Something else (type your action)</label>
+          <input id="wildInput" placeholder="e.g., I try to bribe the guard and slip past..." />
+          <div class="row" style="margin-top:10px;">
+            <button id="wildBtn">Do Something Else</button>
+          </div>
+        </div>
+      </div>
+
+      <details class="card">
+        <summary class="muted">Debug / Memory</summary>
+        <pre id="memoryBox" class="muted" style="white-space:pre-wrap;"></pre>
+      </details>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
