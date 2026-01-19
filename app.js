@@ -88,14 +88,16 @@ function showPlay(c) {
 // -------------------- Better TTS (still built-in voices) --------------------
 let cachedVoice = null;
 
-function pickVoice() {
+function pickEnglishVoice() {
   const voices = window.speechSynthesis?.getVoices?.() || [];
-  if (!voices.length) return null;
+  const enVoices = voices.filter(v => (v.lang || "").toLowerCase().startsWith("en"));
+
+  // Prefer better-quality English voices
   return (
-    voices.find(v => /Siri|Enhanced|Premium/i.test(v.name)) ||
-    voices.find(v => /Google/i.test(v.name)) ||
-    voices.find(v => /English/i.test(v.lang)) ||
-    voices[0]
+    enVoices.find(v => /Siri|Enhanced|Premium/i.test(v.name)) ||
+    enVoices.find(v => /Google/i.test(v.name)) ||
+    enVoices[0] ||
+    null
   );
 }
 
@@ -104,22 +106,30 @@ function speakIfEnabled(c, text) {
   if (!("speechSynthesis" in window)) return;
   if (!text) return;
 
-  // cancel any ongoing speech
   window.speechSynthesis.cancel();
 
-  if (!cachedVoice) cachedVoice = pickVoice();
+  // Refresh voice pick each time (iOS can change voice lists)
+  cachedVoice = pickEnglishVoice();
+
+  // If no English voice exists, don't speak
+  if (!cachedVoice) {
+    console.warn("No English TTS voice found on this device/browser.");
+    return;
+  }
 
   const u = new SpeechSynthesisUtterance(text);
-  if (cachedVoice) u.voice = cachedVoice;
+  u.voice = cachedVoice;
+  u.lang = cachedVoice.lang || "en-US";
   u.rate = 0.95;
   u.pitch = 1.0;
   u.volume = 1.0;
+
   window.speechSynthesis.speak(u);
 }
 
 if ("speechSynthesis" in window) {
   window.speechSynthesis.onvoiceschanged = () => {
-    cachedVoice = pickVoice();
+    cachedVoice = pickEnglishVoice();
   };
 }
 
