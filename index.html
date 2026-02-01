@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Neverending Story</title>
+
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0b1220" />
+
+  <style>
+    body { margin:0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial; background:#0b1220; color:#e7eefc; }
+    .wrap { max-width: 900px; margin: 0 auto; padding: 16px; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:10px; flex-wrap:wrap; }
+    .title { font-size:18px; font-weight:800; }
+    .pill { display:inline-block; margin-left:8px; padding:4px 10px; border-radius:999px; background:#24304f; font-size:12px; }
+    .card { background:#111b31; border:1px solid #223257; border-radius:14px; padding:16px; margin-bottom:14px; }
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    input, select, textarea { background:#0b1220; color:#e7eefc; border:1px solid #2a3a66; border-radius:10px; padding:10px; width:100%; }
+    textarea { min-height: 100px; resize: vertical; }
+    button { background:#2a66ff; color:white; border:0; border-radius:12px; padding:10px 14px; font-weight:600; }
+    button.secondary { background:#24304f; }
+    button.danger { background:#8b2b2b; }
+    button:disabled { opacity: 0.6; }
+    .muted { opacity:0.75; font-size:13px; }
+    .story { white-space:pre-wrap; line-height:1.5; font-size:16px; }
+    .choices { display:flex; flex-direction:column; gap:10px; margin-top:12px; }
+    .choiceBtn { text-align:left; }
+    .list { display:flex; flex-direction:column; gap:10px; margin-top:10px; }
+    .listItem { padding:12px; border:1px solid #223257; border-radius:12px; background:#0b1220; }
+    .listTitle { font-weight:800; margin-bottom:6px; }
+    details { margin-top:10px; }
+    summary { cursor:pointer; }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <!-- TOP BAR -->
+    <div class="topbar">
+      <div class="title">
+        Neverending Story
+        <span id="campaignPill" class="pill">No campaign</span>
+      </div>
+      <div class="row" style="justify-content:flex-end;">
+        <button id="libraryBtn" class="secondary">Library</button>
+        <button id="settingsBtn" class="secondary">Settings</button>
+        <button id="pauseBtn" class="secondary">Pause/Resume</button>
+        <button id="stopBtn" class="secondary">Stop</button>
+        <button id="replayBtn" class="secondary">Replay</button>
+        <button id="undoBtn" class="secondary">Undo</button>
+      </div>
+    </div>
+
+    <!-- LIBRARY CARD -->
+    <div id="libraryCard" class="card" style="display:none;">
+      <div class="row" style="justify-content:space-between;">
+        <div>
+          <div style="font-weight:800;font-size:16px;">Library</div>
+          <div class="muted">Tap a campaign to continue it.</div>
+        </div>
+        <div class="row">
+          <button id="newFromLibraryBtn">New Story</button>
+          <button id="closeLibraryBtn" class="secondary">Close</button>
+        </div>
+      </div>
+
+      <div id="libraryList" class="list"></div>
+
+      <div class="row" style="margin-top:12px;">
+        <button id="wipeBtn" class="danger">Wipe All Local Campaigns</button>
+      </div>
+    </div>
+
+    <!-- SETTINGS CARD -->
+    <div id="settingsCard" class="card" style="display:none;">
+      <div class="row" style="justify-content:space-between;">
+        <div>
+          <div style="font-weight:800;font-size:16px;">Settings</div>
+          <div class="muted">Set Worker URL once. You can change it anytime.</div>
+        </div>
+        <div class="row">
+          <button id="closeSettingsBtn" class="secondary">Close</button>
+        </div>
+      </div>
+
+      <div style="margin-top:10px;">
+        <div class="muted">Worker URL</div>
+        <input id="workerUrl" placeholder="https://your-worker.workers.dev/" />
+        <div class="row" style="margin-top:10px;">
+          <button id="saveWorkerBtn">Save Worker</button>
+          <button id="clearWorkerBtn" class="secondary">Clear</button>
+        </div>
+        <div id="workerStatus" class="muted" style="margin-top:8px;"></div>
+      </div>
+    </div>
+
+    <!-- SETUP CARD (NEW STORY) -->
+    <div id="setupCard" class="card">
+      <div class="row" style="justify-content:space-between; align-items:flex-start;">
+        <div style="flex:1; min-width:260px;">
+          <div class="muted">Campaign name</div>
+          <input id="campaignName" placeholder="Pallimustus" />
+        </div>
+        <div style="flex:1; min-width:260px;">
+          <div class="muted">Worker</div>
+          <div id="workerSummary" class="pill">Not set</div>
+          <div class="row" style="margin-top:10px;">
+            <button id="openSettingsBtn" class="secondary">Set / Change Worker</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <div style="min-width:160px;">
+          <div class="muted">Rating</div>
+          <select id="rating">
+            <option>PG</option>
+            <option selected>PG-13</option>
+            <option>R</option>
+          </select>
+        </div>
+
+        <div style="min-width:160px;">
+          <div class="muted">Pacing</div>
+          <select id="pacing">
+            <option>short</option>
+            <option>medium</option>
+            <option selected>long</option>
+          </select>
+        </div>
+
+        <div style="min-width:160px;">
+          <div class="muted">Voice</div>
+          <select id="ttsMode">
+            <option value="off">Off</option>
+            <option value="on" selected>On (English)</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-top:10px;">
+        <div class="muted">Story seed</div>
+        <textarea id="seed" placeholder="Dark fantasy coastal city. Retired paratrooper turned investigator..."></textarea>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <button id="startBtn">Start</button>
+        <button id="loadBtn" class="secondary">Load from Library</button>
+      </div>
+    </div>
+
+    <!-- PLAY CARD -->
+    <div id="playCard" class="card" style="display:none;">
+      <div id="statusLine" class="muted">Ready.</div>
+
+      <div class="card" style="background:#0b1220;border-color:#223257;">
+        <div id="storyText" class="story"></div>
+      </div>
+
+      <div id="choices" class="choices"></div>
+
+      <div style="margin-top:12px;">
+        <div class="muted">Something else (type your action)</div>
+        <div class="row">
+          <input id="wildInput" placeholder="e.g., I bribe the guard and slip past..." />
+          <button id="wildBtn">Do Something Else</button>
+          <button id="continueBtn" class="secondary">Continue</button>
+        </div>
+      </div>
+
+      <details>
+        <summary class="muted">Debug / Memory</summary>
+        <pre id="memoryBox" style="white-space:pre-wrap;"></pre>
+      </details>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
