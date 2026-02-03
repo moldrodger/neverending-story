@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Neverending Story</title>
+
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0b1220" />
+
+  <style>
+    :root{
+      --bg:#0b1220;
+      --card:#111b31;
+      --card2:#0b1220;
+      --border:#223257;
+      --text:#e7eefc;
+      --muted:rgba(231,238,252,.75);
+      --btn:#2a66ff;
+      --btn2:#24304f;
+      --danger:#ff3b30;
+    }
+    *{ box-sizing:border-box; }
+    body { margin:0; font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial; background:var(--bg); color:var(--text); }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 16px; }
+
+    .topbar { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; gap:10px; flex-wrap:wrap; }
+    .title { font-size:22px; font-weight:900; letter-spacing:.2px; display:flex; align-items:center; gap:10px; }
+    .pill { display:inline-block; padding:6px 12px; border-radius:999px; background:var(--btn2); font-size:12px; font-weight:700; }
+
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .stack { display:flex; flex-direction:column; gap:8px; }
+    .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:14px; }
+    .subcard { background:var(--card2); border:1px solid var(--border); border-radius:14px; padding:14px; }
+
+    .muted { opacity:0.85; font-size:13px; color:var(--muted); }
+    .label { font-size:12px; font-weight:800; opacity:.9; margin-bottom:6px; }
+    input, select, textarea {
+      background:var(--bg);
+      color:var(--text);
+      border:1px solid #2a3a66;
+      border-radius:10px;
+      padding:10px;
+      width:100%;
+      outline:none;
+    }
+    textarea { min-height:110px; resize:vertical; }
+
+    button {
+      background:var(--btn);
+      color:white;
+      border:0;
+      border-radius:12px;
+      padding:10px 14px;
+      font-weight:800;
+      letter-spacing:.2px;
+    }
+    button.secondary { background:var(--btn2); }
+    button.danger { background:var(--danger); }
+    button:disabled { opacity:0.6; }
+
+    .field { flex:1; min-width:260px; }
+    .fieldSmall { min-width:180px; }
+    .fieldTiny { min-width:140px; }
+
+    .story { white-space:pre-wrap; line-height:1.55; font-size:16px; }
+    .choices { display:flex; flex-direction:column; gap:10px; margin-top:12px; }
+    .choiceBtn { text-align:left; }
+
+    .statusbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+    .statusline{
+      font-weight:800;
+      font-size:13px;
+      opacity:.95;
+    }
+
+    details { margin-top:10px; }
+
+    /* ----- Modal (Library) ----- */
+    .modalBack {
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.55);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+      z-index:9999;
+    }
+    .modal {
+      width:min(920px, 100%);
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.4);
+    }
+    .modalHeader{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-bottom:12px;
+    }
+    .modalTitle{
+      font-size:16px;
+      font-weight:900;
+    }
+    .grid2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    @media (max-width: 820px){
+      .grid2{ grid-template-columns: 1fr; }
+    }
+    .hint{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.35;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <!-- TOP BAR -->
+    <div class="topbar">
+      <div class="title">
+        Neverending Story
+        <span id="campaignPill" class="pill">No campaign</span>
+      </div>
+
+      <div class="row">
+        <button id="libraryBtn" class="secondary" type="button">Library</button>
+        <button id="replayBtn" class="secondary" type="button">Replay</button>
+        <button id="pauseBtn" class="secondary" type="button">Pause/Resume</button>
+        <button id="stopBtn" class="secondary" type="button">Stop</button>
+        <button id="undoBtn" class="secondary" type="button">Undo / Jump</button>
+      </div>
+    </div>
+
+    <!-- SETUP CARD -->
+    <div id="setupCard" class="card">
+      <div class="row">
+        <div class="field">
+          <div class="label">Story Worker URL</div>
+          <input id="workerUrl" placeholder="https://your-story-worker.workers.dev/" />
+        </div>
+
+        <div class="field">
+          <div class="label">TTS Worker URL (OpenAI)</div>
+          <input id="ttsWorkerUrl" placeholder="https://nes-tts.yourname.workers.dev/" />
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <div class="fieldSmall">
+          <div class="label">Narration mode</div>
+          <select id="narrationMode">
+            <option value="off">Off</option>
+            <option value="local">Free (iPhone Voice)</option>
+            <option value="openai" selected>OpenAI TTS</option>
+          </select>
+        </div>
+
+        <div class="fieldSmall">
+          <div class="label">Local voice (Free)</div>
+          <select id="localVoice">
+            <option value="auto" selected>Auto (best English)</option>
+          </select>
+        </div>
+
+        <div class="fieldSmall">
+          <div class="label">OpenAI voice</div>
+          <select id="ttsVoice">
+            <option value="alloy" selected>alloy</option>
+            <option value="verse">verse</option>
+            <option value="aria">aria</option>
+            <option value="nova">nova</option>
+            <option value="sage">sage</option>
+            <option value="coral">coral</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <div class="field">
+          <div class="label">Campaign name</div>
+          <input id="campaignName" placeholder="Pallimustus" />
+        </div>
+
+        <div class="fieldTiny">
+          <div class="label">Rating</div>
+          <select id="rating">
+            <option>PG</option>
+            <option selected>PG-13</option>
+            <option>R</option>
+          </select>
+        </div>
+
+        <div class="fieldTiny">
+          <div class="label">Pacing</div>
+          <select id="pacing">
+            <option>short</option>
+            <option>medium</option>
+            <option selected>long</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-top:10px;">
+        <div class="label">Story seed</div>
+        <textarea id="seed" placeholder="Dark fantasy coastal city. Retired paratrooper turned investigator..."></textarea>
+      </div>
+
+      <div class="row" style="margin-top:12px;">
+        <button id="startBtn" type="button">Start</button>
+        <button id="loadBtn" class="secondary" type="button">Load</button>
+        <button id="wipeBtn" class="secondary" type="button">Wipe</button>
+      </div>
+
+      <div class="hint" style="margin-top:10px;">
+        Tip: Install to Home Screen for PWA mode. On iOS, audio may require a tap before it’s allowed.
+      </div>
+    </div>
+
+    <!-- PLAY CARD -->
+    <div id="playCard" class="card" style="display:none;">
+      <div class="statusbar">
+        <div id="statusLine" class="statusline muted">Ready.</div>
+        <div class="muted" id="segmentHint" aria-hidden="true"></div>
+      </div>
+
+      <div class="subcard">
+        <div id="storyText" class="story"></div>
+      </div>
+
+      <div id="choices" class="choices"></div>
+
+      <div style="margin-top:12px;">
+        <div class="label">Something else (type your action)</div>
+        <div class="row">
+          <input id="wildInput" placeholder="e.g., I bribe the guard and slip past..." />
+          <button id="wildBtn" type="button">Do Something Else</button>
+          <button id="continueBtn" class="secondary" type="button">Continue</button>
+        </div>
+      </div>
+
+      <details>
+        <summary class="muted">Debug / Memory</summary>
+        <pre id="memoryBox" style="white-space:pre-wrap;"></pre>
+      </details>
+    </div>
+  </div>
+
+  <!-- LIBRARY MODAL (NEW UI — app.js wiring comes next) -->
+  <div id="libraryModalBack" class="modalBack" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Library">
+      <div class="modalHeader">
+        <div class="modalTitle">Library</div>
+        <button id="closeLibraryModalBtn" class="secondary" type="button">Close</button>
+      </div>
+
+      <div class="grid2">
+        <div class="stack">
+          <div class="label">Select Story</div>
+          <select id="libraryCampaignSelect">
+            <option value="">(App will populate this list)</option>
+          </select>
+
+          <div class="label" style="margin-top:8px;">Select Segment</div>
+          <select id="librarySegmentSelect">
+            <option value="">(Select a story first)</option>
+          </select>
+
+          <div class="row" style="margin-top:10px;">
+            <button id="libraryLoadBtn" type="button">Load Story</button>
+            <button id="libraryJumpBtn" class="secondary" type="button">Jump to Segment</button>
+          </div>
+
+          <div class="hint" style="margin-top:8px;">
+            Jumping to a segment will “rewind time.” If you make a different choice after rewinding,
+            the timeline after that point will be replaced.
+          </div>
+        </div>
+
+        <div class="stack">
+          <div class="label">Story Actions</div>
+          <div class="row">
+            <button id="libraryDeleteBtn" class="danger" type="button">Delete Story</button>
+            <button id="libraryClearSegmentsBtn" class="secondary" type="button">Clear Segments</button>
+          </div>
+
+          <div class="hint" style="margin-top:8px;">
+            “Clear Segments” keeps the story entry but wipes chapters/history.
+            “Delete Story” removes it from this device completely.
+          </div>
+
+          <div class="label" style="margin-top:14px;">Library Actions</div>
+          <div class="row">
+            <button id="libraryWipeAllBtn" class="danger" type="button">Wipe Entire Library</button>
+          </div>
+
+          <div class="hint" style="margin-top:8px;">
+            This deletes all stories stored locally on this device.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+
+  <!-- Tiny modal helper (safe even if app.js ignores it) -->
+  <script>
+    (function () {
+      const back = document.getElementById("libraryModalBack");
+      const openBtn = document.getElementById("libraryBtn");
+      const closeBtn = document.getElementById("closeLibraryModalBtn");
+
+      function openModal() {
+        if (!back) return;
+        back.style.display = "flex";
+        back.setAttribute("aria-hidden", "false");
+      }
+      function closeModal() {
+        if (!back) return;
+        back.style.display = "none";
+        back.setAttribute("aria-hidden", "true");
+      }
+
+      // Don’t override app.js behavior — just add a UI layer.
+      // app.js will still receive the click and can do its normal thing.
+      if (openBtn) openBtn.addEventListener("dblclick", (e) => { e.preventDefault(); openModal(); });
+      if (closeBtn) closeBtn.addEventListener("click", closeModal);
+      if (back) back.addEventListener("click", (e) => { if (e.target === back) closeModal(); });
+    })();
+  </script>
+</body>
+</html>
