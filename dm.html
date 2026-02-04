@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NES DM Mode (Minimal)</title>
+  <style>
+    body { margin:0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial; background:#0b1220; color:#e7eefc; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 16px; }
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:end; }
+    .card { background:#111b31; border:1px solid #223257; border-radius:14px; padding:14px; margin-bottom:12px; }
+    input, select, textarea { background:#0b1220; color:#e7eefc; border:1px solid #2a3a66; border-radius:10px; padding:10px; }
+    input, select { height: 40px; }
+    textarea { width:100%; min-height: 70px; }
+    button { background:#2a66ff; color:white; border:0; border-radius:12px; padding:10px 14px; font-weight:700; cursor:pointer; }
+    button.secondary { background:#24304f; }
+    button.danger { background:#a83b3b; }
+    button:disabled { opacity:.6; cursor:not-allowed; }
+    table { width:100%; border-collapse: collapse; }
+    th, td { border-bottom:1px solid #223257; padding:8px; text-align:left; vertical-align:top; }
+    th { opacity:.85; font-weight:700; }
+    .muted { opacity:.75; font-size: 13px; }
+    .pill { display:inline-block; padding: 3px 10px; border-radius:999px; background:#24304f; font-size: 12px; margin-left:8px; }
+    .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+    .logItem { padding:8px; border:1px solid #223257; border-radius:10px; margin:8px 0; background:#0b1220; }
+    .logItem button { padding:6px 10px; border-radius:10px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <div style="font-weight:900; font-size:18px;">
+          NES DM Mode (Minimal)
+          <span id="encPill" class="pill">No encounter</span>
+        </div>
+        <div class="row" style="align-items:center;">
+          <button id="newEncBtn">New</button>
+          <button id="saveBtn" class="secondary">Save</button>
+          <button id="loadBtn" class="secondary">Load</button>
+          <button id="wipeBtn" class="danger">Wipe</button>
+        </div>
+      </div>
+      <div class="muted" style="margin-top:8px;">
+        This is the Phase 1 DM shell: add combatants, resolve actions, log + rewind.
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- Encounter setup -->
+      <div class="card">
+        <div class="row">
+          <div style="flex:1; min-width:220px;">
+            <div class="muted">Encounter title</div>
+            <input id="encTitle" placeholder="Street ambush at Dock 9" style="width:100%;" />
+          </div>
+          <div style="min-width:170px;">
+            <div class="muted">System</div>
+            <select id="systemSel">
+              <option value="d20">d20 (D&D-like)</option>
+              <option value="d6pool">d6 pool (Shadowrun-like)</option>
+            </select>
+          </div>
+          <div style="min-width:170px;">
+            <div class="muted">Seed (optional)</div>
+            <input id="seed" placeholder="any text" />
+          </div>
+        </div>
+
+        <hr style="border:0; border-top:1px solid #223257; margin:12px 0;">
+
+        <div class="muted" style="font-weight:800;">Add combatant</div>
+        <div class="row" style="margin-top:8px;">
+          <input id="cName" placeholder="Name" style="flex:1; min-width:200px;">
+          <input id="cInit" placeholder="Init" style="width:90px;">
+          <span class="muted" style="min-width:100%;">d20 fields</span>
+          <input id="cHP" placeholder="HP" style="width:90px;">
+          <input id="cAC" placeholder="AC" style="width:90px;">
+          <span class="muted" style="min-width:100%;">d6 pool fields (Shadowrun)</span>
+          <input id="cStunMax" placeholder="StunMax" style="width:110px;">
+          <input id="cPhysMax" placeholder="PhysMax" style="width:110px;">
+          <input id="cSoak" placeholder="SoakDice" style="width:110px;">
+          <button id="addCBtn">Add</button>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <button id="sortInitBtn" class="secondary">Sort initiative</button>
+          <button id="nextTurnBtn" class="secondary">Next turn</button>
+          <div class="muted" id="turnInfo" style="align-self:center;"></div>
+        </div>
+      </div>
+
+      <!-- Resolver -->
+      <div class="card">
+        <div class="muted" style="font-weight:800;">Resolver</div>
+        <div class="row" style="margin-top:8px;">
+          <div style="flex:1; min-width:220px;">
+            <div class="muted">Actor</div>
+            <select id="actorSel" style="width:100%;"></select>
+          </div>
+          <div style="flex:1; min-width:220px;">
+            <div class="muted">Target</div>
+            <select id="targetSel" style="width:100%;"></select>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <div class="muted" style="min-width:100%; font-weight:800;">Auto / manual roll</div>
+          <select id="rollMode">
+            <option value="auto" selected>Auto roll</option>
+            <option value="manual">Manual (enter totals)</option>
+          </select>
+          <input id="manualToHit" placeholder="Manual to-hit total" style="width:170px;">
+          <input id="manualDmg" placeholder="Manual damage total" style="width:170px;">
+          <input id="manualHitsA" placeholder="Manual hits (atk)" style="width:170px;">
+          <input id="manualHitsD" placeholder="Manual hits (def)" style="width:170px;">
+          <input id="manualHitsSoak" placeholder="Manual hits (soak)" style="width:170px;">
+        </div>
+
+        <hr style="border:0; border-top:1px solid #223257; margin:12px 0;">
+
+        <div class="muted" style="font-weight:800;">d20 quick actions</div>
+        <div class="row" style="margin-top:8px;">
+          <input id="toHitBonus" placeholder="+ToHit" style="width:110px;">
+          <input id="dmgExpr" placeholder="Damage e.g. 1d8+3" style="width:180px;">
+          <select id="advMode">
+            <option value="normal" selected>Normal</option>
+            <option value="adv">Advantage</option>
+            <option value="dis">Disadvantage</option>
+          </select>
+          <button id="d20AttackBtn">Attack vs AC</button>
+        </div>
+
+        <div class="row" style="margin-top:8px;">
+          <input id="saveStat" placeholder="Save stat (dex)" style="width:160px;" value="dex">
+          <input id="saveDC" placeholder="DC" style="width:90px;" value="13">
+          <input id="aoeTargets" placeholder="AoE targets: comma names" style="flex:1; min-width:240px;">
+          <input id="aoeDmg" placeholder="AoE dmg e.g. 8d6" style="width:140px;" value="8d6">
+          <select id="saveOnSuccess">
+            <option value="half" selected>Success = half</option>
+            <option value="none">Success = none</option>
+          </select>
+          <button id="d20SaveBtn" class="secondary">AoE Save</button>
+        </div>
+
+        <hr style="border:0; border-top:1px solid #223257; margin:12px 0;">
+
+        <div class="muted" style="font-weight:800;">d6 pool quick actions (Shadowrun)</div>
+        <div class="row" style="margin-top:8px;">
+          <input id="atkDice" placeholder="Atk dice" style="width:120px;">
+          <input id="defDice" placeholder="Def dice" style="width:120px;">
+          <input id="baseDV" placeholder="Base DV" style="width:120px;">
+          <select id="trackSel">
+            <option value="physical" selected>Physical</option>
+            <option value="stun">Stun</option>
+          </select>
+          <button id="d6OpposedBtn">Opposed test</button>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <div class="muted" id="resultBox" style="white-space:pre-wrap;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Combatants table -->
+    <div class="card">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <div style="font-weight:900;">Combatants</div>
+        <div class="muted">Click a row to set Actor/Target</div>
+      </div>
+
+      <div style="overflow:auto; margin-top:8px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Init</th>
+              <th>d20: HP / AC</th>
+              <th>d6: Stun / Phys / Soak</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="cTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Log -->
+    <div class="card">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <div style="font-weight:900;">Log</div>
+        <div class="muted">Rewind deletes everything after that point.</div>
+      </div>
+      <div id="logBox"></div>
+    </div>
+
+  </div>
+
+  <script type="module" src="dm.js"></script>
+</body>
+</html>
