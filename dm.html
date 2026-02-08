@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NES DM Console (Phase 1)</title>
+  <style>
+    body { margin:0; font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial; background:#0b1220; color:#e7eefc; }
+    .wrap { display:grid; grid-template-columns: 320px 1fr 340px; gap:12px; padding:12px; max-width:1400px; margin:0 auto; }
+    .card { background:#111b31; border:1px solid #223257; border-radius:14px; padding:12px; }
+    .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .muted { opacity:.75; font-size:13px; }
+    button { background:#2a66ff; color:#fff; border:0; border-radius:12px; padding:10px 12px; font-weight:700; cursor:pointer; }
+    button.secondary { background:#24304f; }
+    button.danger { background:#b33a3a; }
+    button:disabled { opacity:.6; cursor:not-allowed; }
+    input, select, textarea {
+      width:100%; background:#0b1220; color:#e7eefc;
+      border:1px solid #2a3a66; border-radius:10px; padding:10px;
+    }
+    textarea { min-height:90px; resize:vertical; }
+    h2 { margin:0 0 8px 0; font-size:16px; }
+    .list { display:flex; flex-direction:column; gap:6px; }
+    .item {
+      border:1px solid #223257; border-radius:12px; padding:8px;
+      display:flex; justify-content:space-between; align-items:center; gap:8px;
+      background:#0b1220;
+    }
+    .pill { font-size:12px; padding:2px 8px; border-radius:999px; background:#24304f; }
+    .log { white-space:pre-wrap; line-height:1.45; font-size:14px; }
+    .logEntry { border:1px solid #223257; background:#0b1220; border-radius:12px; padding:10px; margin-bottom:8px; }
+    .logEntry button { padding:6px 10px; border-radius:10px; font-weight:700; }
+    .actions { display:flex; flex-direction:column; gap:8px; }
+    .actionBtn { text-align:left; }
+    .targets { display:flex; flex-direction:column; gap:6px; margin-top:6px; }
+    .targetRow { display:flex; align-items:center; gap:8px; }
+    .split { display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
+    .small { font-size:12px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <!-- LEFT: ROSTER -->
+    <div class="card">
+      <h2>Roster</h2>
+      <div class="row">
+        <select id="systemSelect">
+          <option value="d20">d20 (D&D-like)</option>
+          <option value="d6pool">d6 Pool (Shadowrun-like)</option>
+        </select>
+        <button id="loadSamplesBtn" class="secondary">Load Samples</button>
+      </div>
+
+      <div style="margin-top:10px" class="split">
+        <div class="card" style="margin:0; padding:10px;">
+          <div class="row" style="justify-content:space-between;">
+            <div><b>PCs</b></div>
+            <span class="pill" id="pcCount">0</span>
+          </div>
+          <div id="pcList" class="list" style="margin-top:8px;"></div>
+        </div>
+
+        <div class="card" style="margin:0; padding:10px;">
+          <div class="row" style="justify-content:space-between;">
+            <div><b>NPCs</b></div>
+            <span class="pill" id="npcCount">0</span>
+          </div>
+          <div id="npcList" class="list" style="margin-top:8px;"></div>
+        </div>
+      </div>
+
+      <div style="margin-top:10px;">
+        <div class="muted">Import/Export (JSON)</div>
+        <textarea id="jsonBox" placeholder="Paste character JSON array here..."></textarea>
+        <div class="row" style="margin-top:8px;">
+          <button id="importBtn" class="secondary">Import</button>
+          <button id="exportBtn" class="secondary">Export</button>
+          <button id="wipeBtn" class="danger">Wipe Session</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTER: LOG / TIMELINE -->
+    <div class="card">
+      <div class="row" style="justify-content:space-between;">
+        <h2>Combat Log</h2>
+        <div class="row">
+          <button id="startEncounterBtn" class="secondary">Start Encounter</button>
+          <button id="nextTurnBtn">Next Turn</button>
+        </div>
+      </div>
+
+      <div class="row muted small" style="justify-content:space-between; margin-bottom:8px;">
+        <div>Turn: <span id="turnLabel">—</span></div>
+        <div>Active: <span id="activeLabel">—</span></div>
+      </div>
+
+      <div id="log" class="log"></div>
+    </div>
+
+    <!-- RIGHT: ACTIVE / ACTIONS -->
+    <div class="card">
+      <h2>Active Character</h2>
+      <div class="muted" id="activeMeta">No active character.</div>
+
+      <div style="margin-top:10px;" class="card">
+        <div class="row" style="justify-content:space-between;">
+          <b>Roll Mode</b>
+          <select id="rollMode">
+            <option value="auto">Auto-roll</option>
+            <option value="manual">Manual entry</option>
+          </select>
+        </div>
+
+        <div class="row" style="margin-top:8px;">
+          <button id="pauseBtn" class="secondary">Pause (Future)</button>
+          <button id="stopBtn" class="secondary">Stop (Future)</button>
+        </div>
+
+        <div class="muted small" style="margin-top:8px;">
+          (Pause/Stop are placeholders for Phase 2 “AI DM assistant narration”.)
+        </div>
+      </div>
+
+      <div style="margin-top:10px;">
+        <b>Actions (from sheet)</b>
+        <div id="actions" class="actions" style="margin-top:8px;"></div>
+      </div>
+
+      <div style="margin-top:10px;">
+        <b>Targets</b>
+        <div id="targets" class="targets"></div>
+      </div>
+
+      <div style="margin-top:10px;" class="card">
+        <b>Manual Inputs</b>
+        <div class="muted small">Used only when Roll Mode = Manual</div>
+        <div class="split" style="margin-top:8px;">
+          <div>
+            <div class="muted small">Primary roll (total or hits)</div>
+            <input id="manualPrimary" placeholder="e.g., 17 (d20) or 4 (hits)" />
+          </div>
+          <div>
+            <div class="muted small">Defense roll (optional)</div>
+            <input id="manualDefense" placeholder="e.g., 13 (AC check) or 2 hits" />
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script src="dm.js"></script>
+</body>
+</html>
