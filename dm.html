@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NES DM Console (Phase 1.6)</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial; background:#0b1220; color:#e7eefc; }
+    .wrap {
+      display:grid;
+      grid-template-columns: 360px minmax(0,1fr) 420px;
+      gap:12px; padding:12px; max-width:1600px; margin:0 auto;
+      align-items:start;
+    }
+    .card { background:#111b31; border:1px solid #223257; border-radius:14px; padding:12px; min-width:0; }
+    .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; min-width:0; }
+    .muted { opacity:.78; font-size:13px; }
+    .small { font-size:12px; opacity:.82; }
+
+    h2 { margin:0 0 8px 0; font-size:16px; }
+    b { font-weight:800; }
+
+    button { background:#2a66ff; color:#fff; border:0; border-radius:12px; padding:10px 12px; font-weight:800; cursor:pointer; }
+    button.secondary { background:#24304f; }
+    button.danger { background:#b33a3a; }
+    button:disabled { opacity:.55; cursor:not-allowed; }
+
+    input, select, textarea {
+      width:100%; background:#0b1220; color:#e7eefc;
+      border:1px solid #2a3a66; border-radius:10px; padding:10px;
+    }
+    textarea { min-height:90px; resize:vertical; }
+
+    .pill { font-size:12px; padding:2px 10px; border-radius:999px; background:#24304f; display:inline-block; }
+    .pill.good { background:#1f6f3f; }
+    .pill.warn { background:#7a5a12; }
+    .pill.bad  { background:#7a1f2a; }
+    .pill.activePill { background:#2a66ff; }
+
+    .divider { height:1px; background:#223257; margin:10px 0; opacity:.85; }
+
+    /* ROSTER */
+    .split { display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap:10px; align-items:start; min-width:0; }
+    .list { display:flex; flex-direction:column; gap:8px; min-width:0; }
+    .item {
+      border:1px solid #223257; border-radius:14px; padding:10px;
+      background:#0b1220;
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap:10px;
+      align-items:start;
+      min-width:0;
+    }
+    .item.active {
+      border-color:#2a66ff;
+      box-shadow: 0 0 0 1px rgba(42,102,255,.35), 0 0 18px rgba(42,102,255,.18);
+    }
+    .itemLeft { min-width:0; }
+    .nameLine { display:flex; justify-content:space-between; gap:8px; align-items:center; min-width:0; }
+    .charName { font-weight:900; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .subLine { display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
+    .barWrap { height:10px; border-radius:999px; background:#24304f; overflow:hidden; border:1px solid #223257; margin-top:8px; }
+    .barFill { height:100%; width:50%; background:#1f6f3f; }
+    .statsLine { display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; }
+    .mini { font-size:12px; opacity:.85; }
+
+    /* CENTER */
+    .centerHeader { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    .centerHeader .row button { padding:8px 10px; border-radius:12px; }
+
+    .lastBanner {
+      border:1px solid #223257; border-radius:14px;
+      background:#0b1220;
+      padding:10px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+    }
+    .lastText { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .initBox {
+      border:1px solid #223257; border-radius:14px; padding:10px; background:#0b1220;
+      min-width:0;
+    }
+    .initLine { white-space:nowrap; overflow:auto; padding-bottom:2px; }
+
+    /* RIGHT */
+    .sectionTitle { display:flex; justify-content:space-between; align-items:center; gap:8px; min-width:0; }
+    .turnBox, .box {
+      border:1px solid #223257; border-radius:14px; padding:10px; background:#0b1220;
+      display:flex; flex-direction:column; gap:8px; min-width:0;
+    }
+    .turnRow { display:flex; gap:8px; flex-wrap:wrap; }
+    .toggleBtn { background:#24304f; }
+    .toggleBtn.on { background:#2a66ff; }
+
+    .grid2 { display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap:10px; align-items:start; min-width:0; }
+
+    .actions { display:flex; flex-direction:column; gap:8px; }
+    .actionBtn { text-align:left; }
+
+    .targets { display:flex; flex-direction:column; gap:8px; min-width:0; }
+    .targetRow {
+      display:grid;
+      grid-template-columns: 22px 1fr auto;
+      gap:10px;
+      align-items:center;
+      padding:10px;
+      border:1px solid #223257;
+      border-radius:12px;
+      background:#0b1220;
+      min-width:0;
+    }
+    .targetName { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .hpChip { font-size:12px; padding:2px 10px; border-radius:999px; background:#24304f; }
+
+    /* MODAL LOG */
+    .modalBack {
+      position:fixed; inset:0;
+      background: rgba(0,0,0,.55);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:14px;
+      z-index:9999;
+    }
+    .modal {
+      width:min(1100px, 96vw);
+      max-height: 88vh;
+      overflow:auto;
+      background:#0b1220;
+      border:1px solid #223257;
+      border-radius:16px;
+      padding:12px;
+      box-shadow: 0 20px 80px rgba(0,0,0,.6);
+    }
+    .logEntry {
+      border:1px solid #223257;
+      background:#111b31;
+      border-radius:14px;
+      padding:10px;
+      margin:10px 0;
+    }
+    .logEntryTop { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    .logEntryText { white-space:pre-wrap; line-height:1.45; margin-top:6px; }
+    .logEntry button { padding:6px 10px; border-radius:10px; font-weight:900; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <!-- LEFT: ROSTER -->
+    <div class="card">
+      <div class="sectionTitle">
+        <h2>Roster</h2>
+        <span class="pill" id="systemPill">—</span>
+      </div>
+
+      <div class="row">
+        <select id="systemSelect">
+          <option value="d20">d20 (D&D-like)</option>
+          <option value="d6pool">d6 Pool (Shadowrun-like)</option>
+        </select>
+        <button id="loadSamplesBtn" class="secondary">Load Samples</button>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="split">
+        <div class="card" style="margin:0; padding:10px;">
+          <div class="sectionTitle">
+            <div><b>PCs</b></div>
+            <span class="pill" id="pcCount">0</span>
+          </div>
+          <div id="pcList" class="list" style="margin-top:8px;"></div>
+        </div>
+
+        <div class="card" style="margin:0; padding:10px;">
+          <div class="sectionTitle">
+            <div><b>NPCs</b></div>
+            <span class="pill" id="npcCount">0</span>
+          </div>
+          <div id="npcList" class="list" style="margin-top:8px;"></div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div>
+        <div class="muted">Import/Export (JSON)</div>
+        <textarea id="jsonBox" placeholder="Paste character JSON array here..."></textarea>
+        <div class="row" style="margin-top:8px;">
+          <button id="importBtn" class="secondary">Import</button>
+          <button id="exportBtn" class="secondary">Export</button>
+          <button id="wipeBtn" class="danger">Wipe Session</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTER: COMBAT -->
+    <div class="card">
+      <div class="centerHeader">
+        <div>
+          <h2 style="margin-bottom:2px;">Combat</h2>
+          <div class="row muted small" style="gap:14px;">
+            <div>Round: <span id="roundLabel">—</span></div>
+            <div>Turn: <span id="turnLabel">—</span></div>
+            <div>Active: <span id="activeLabel">—</span></div>
+            <div>Status: <span id="turnStatus">—</span></div>
+          </div>
+        </div>
+        <div class="row">
+          <button id="startEncounterBtn" class="secondary">Start</button>
+          <button id="rollInitBtn" class="secondary">Initiative</button>
+          <button id="endTurnBtn" class="secondary">End Turn</button>
+          <button id="nextTurnBtn">Next Turn</button>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="initBox">
+        <div class="sectionTitle">
+          <b>Initiative Order</b>
+          <span class="pill" id="initHint">auto</span>
+        </div>
+        <div id="initList" class="initLine muted small">No initiative yet.</div>
+      </div>
+
+      <div style="margin-top:10px;" class="lastBanner">
+        <div class="lastText" id="lastActionText">Last Action: —</div>
+        <div class="row" style="flex-wrap:nowrap;">
+          <button id="openLogBtn" class="secondary" style="padding:8px 10px;">Open Log</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: ACTIVE -->
+    <div class="card">
+      <div class="sectionTitle">
+        <h2>Active Character</h2>
+        <span class="pill" id="activeRolePill">—</span>
+      </div>
+
+      <div class="muted" id="activeMeta">No active character.</div>
+
+      <div class="divider"></div>
+
+      <div class="turnBox">
+        <div class="sectionTitle">
+          <b>Turn Actions</b>
+          <span class="pill" id="apPill">—</span>
+        </div>
+        <div class="turnRow">
+          <button id="apMove" class="toggleBtn secondary">Move</button>
+          <button id="apAction" class="toggleBtn secondary">Action</button>
+          <button id="apBonus" class="toggleBtn secondary">Bonus</button>
+          <button id="apReaction" class="toggleBtn secondary">Reaction</button>
+        </div>
+        <div class="muted small">Hidden buttons mean that action type isn't on the sheet.</div>
+      </div>
+
+      <div class="box" style="margin-top:10px;">
+        <div class="sectionTitle">
+          <b>Roll Mode</b>
+          <select id="rollMode" style="width:auto; min-width:160px;">
+            <option value="auto">Auto-roll</option>
+            <option value="manual">Manual entry</option>
+          </select>
+        </div>
+
+        <div class="grid2" style="margin-top:10px;">
+          <div>
+            <div class="muted small">Primary roll (total or hits)</div>
+            <input id="manualPrimary" placeholder="e.g., 17 (d20) or 4 (hits)" />
+          </div>
+          <div>
+            <div class="muted small">Defense roll (optional)</div>
+            <input id="manualDefense" placeholder="e.g., 13 or 2" />
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:10px;">
+        <b>Actions (from sheet)</b>
+        <div id="actions" class="actions" style="margin-top:8px;"></div>
+      </div>
+
+      <div style="margin-top:10px;">
+        <b>Targets</b>
+        <div id="targets" class="targets" style="margin-top:8px;"></div>
+      </div>
+
+      <div class="box" style="margin-top:10px;">
+        <b>Conditions / Modifiers</b>
+        <div class="muted small">Applies to the ACTIVE character</div>
+        <div class="grid2" style="margin-top:8px;">
+          <select id="advMode">
+            <option value="none">Normal</option>
+            <option value="adv">Advantage</option>
+            <option value="dis">Disadvantage</option>
+          </select>
+          <input id="rollMod" placeholder="Roll modifier (e.g., +2 or -1)" />
+        </div>
+        <div style="margin-top:8px;">
+          <input id="condNote" placeholder='Add note (e.g., "Bless", "Prone", "-2 Wound")' />
+          <div class="row" style="margin-top:8px;">
+            <button id="addCondBtn" class="secondary">Add</button>
+            <button id="clearCondsBtn" class="secondary">Clear</button>
+          </div>
+          <div id="condList" class="muted small" style="margin-top:8px;"></div>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <button id="libraryBtn" class="secondary">Roster</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- LOG MODAL -->
+  <div id="logBack" class="modalBack" aria-hidden="true">
+    <div class="modal">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <h2 style="margin:0;">Combat Log</h2>
+        <button id="closeLogBtn" class="secondary" style="padding:8px 10px;">Close</button>
+      </div>
+      <div id="logList"></div>
+    </div>
+  </div>
+
+  <script src="dm.js"></script>
+</body>
+</html>
